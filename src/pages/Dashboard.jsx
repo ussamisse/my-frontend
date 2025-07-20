@@ -7,7 +7,7 @@ function Dashboard() {
 
   const fetchStats = () => {
     axios
-      .get("http://localhost:4000/stats", {
+      .get("https://my-backend-e2jy.onrender.com/stats", {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setStats(res.data))

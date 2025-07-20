@@ -21,13 +21,14 @@ function Infractions() {
   }, [token]);
 
   const fetchData = () => {
-    axios.get("http://localhost:4000/vehicles", { headers: { Authorization: `Bearer ${token}` } })
-      .then(res => setVehicles(res.data));
-    axios.get("http://localhost:4000/drivers", { headers: { Authorization: `Bearer ${token}` } })
-      .then(res => setDrivers(res.data));
-    axios.get("http://localhost:4000/infractions", { headers: { Authorization: `Bearer ${token}` } })
-      .then(res => setInfractions(res.data));
-  };
+  axios.get(`${API_BASE}/vehicles`, { headers: { Authorization: `Bearer ${token}` } })
+    .then(res => setVehicles(res.data));
+  axios.get(`${API_BASE}/drivers`, { headers: { Authorization: `Bearer ${token}` } })
+    .then(res => setDrivers(res.data));
+  axios.get(`${API_BASE}/infractions`, { headers: { Authorization: `Bearer ${token}` } })
+    .then(res => setInfractions(res.data));
+};
+
 
   const startEdit = (inf) => {
     setEditing(inf);
@@ -54,20 +55,14 @@ function Infractions() {
 
       let res;
       if (editing) {
-        res = await axios.put(
-          `http://localhost:4000/infractions/${editing.id}`,
-          payload,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        res = await axios.put(`${API_BASE}/infractions/${editing.id}`, payload, { headers: { Authorization: `Bearer ${token}` } });
+
         setInfractions(prev =>
           prev.map(inf => inf.id === editing.id ? res.data : inf)
         );
       } else {
-        res = await axios.post(
-          "http://localhost:4000/infractions",
-          payload,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        res = await axios.post(`${API_BASE}/infractions`, payload, { headers: { Authorization: `Bearer ${token}` } });
+
         setInfractions(prev => [res.data, ...prev]);
       }
       cancelEdit();
@@ -80,9 +75,8 @@ function Infractions() {
   const handleDelete = async (id) => {
     if (!window.confirm("Confirma exclusão?")) return;
     try {
-      await axios.delete(`http://localhost:4000/infractions/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.delete(`${API_BASE}/infractions/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+
       setInfractions(prev => prev.filter(i => i.id !== id));
     } catch {
       alert("Erro ao deletar infração.");

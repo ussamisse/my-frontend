@@ -9,8 +9,9 @@ function AdminPanel() {
     console.log("Token enviado:", token);
 
     axios
-      .get("http://localhost:4000/admin/users", {
+      .get("https://my-backend-e2jy.onrender.com/admin/users", {
         headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true
       })
       .then(res => {
         console.log("AdminPanel GET /admin/users response:", res.data);
@@ -26,9 +27,12 @@ function AdminPanel() {
     const token = localStorage.getItem("token");
     try {
       await axios.patch(
-        `http://localhost:4000/admin/users/${userId}/role`,
+        `https://my-backend-e2jy.onrender.com/admin/users/${userId}/role`,
         { role: "admin" },
-        { headers: { Authorization: `Bearer ${token}` } }
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true
+        }
       );
       setUsers(prev =>
         prev.map(u =>

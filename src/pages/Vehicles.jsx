@@ -1,4 +1,3 @@
-// src/pages/Vehicles.jsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
@@ -14,18 +13,33 @@ function Vehicles() {
 
   const user = JSON.parse(localStorage.getItem("user"));
   const token = localStorage.getItem("token");
+  const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
+  // Carrega veículos e motoristas
   useEffect(() => {
-    // Buscar veículos e motoristas
-    axios
-      .get("http://localhost:4000/vehicles", { headers: { Authorization: `Bearer ${token}` } })
-      .then(res => setVehicles(res.data))
-      .catch(() => alert("Access denied. Please log in."));
-    axios
-      .get("http://localhost:4000/drivers", { headers: { Authorization: `Bearer ${token}` } })
-      .then(res => setDrivers(res.data))
-      .catch(err => console.error("Erro ao buscar motoristas:", err));
-  }, [token]);
+    const fetchData = async () => {
+      try {
+        const [vehiclesRes, driversRes] = await Promise.all([
+          axios.get(`${API}/vehicles`, { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get(`${API}/drivers`, { headers: { Authorization: `Bearer ${token}` } }),
+        ]);
+        setVehicles(vehiclesRes.data);
+        setDrivers(driversRes.data);
+      } catch (err) {
+        alert("Erro ao buscar dados. Faça login novamente.");
+      }
+    };
+    fetchData();
+  }, [API, token]);
+
+  const resetForm = () => {
+    setEditId(null);
+    setPlateNumber("");
+    setModel("");
+    setOwner("");
+    setDriverId("");
+    setShowForm(false);
+  };
 
   const openFormCreate = () => {
     resetForm();
@@ -34,30 +48,33 @@ function Vehicles() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!driverId) return alert("Selecione um motorista!");
+
+    const data = {
+      plate_number: plateNumber,
+      model,
+      owner,
+      driver_id: driverId,
+    };
+
     try {
       const res = editId
-        ? await axios.put(
-            `http://localhost:4000/vehicles/${editId}`,
-            { plate_number: plateNumber, model, owner, driver_id: driverId },
-            { headers: { Authorization: `Bearer ${token}` } }
-          )
-        : await axios.post(
-            "http://localhost:4000/vehicles",
-            { plate_number: plateNumber, model, owner, driver_id: driverId },
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
+        ? await axios.put(`${API}/vehicles/${editId}`, data, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+        : await axios.post(`${API}/vehicles`, data, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
       setVehicles(prev =>
-        editId
-          ? prev.map(v => (v.id === editId ? res.data : v))
-          : [...prev, res.data]
+        editId ? prev.map(v => (v.id === editId ? res.data : v)) : [...prev, res.data]
       );
+
       resetForm();
     } catch (err) {
-      alert(
-        `${editId ? "Error updating" : "Error registering"} vehicle: ${
-          err.response?.data?.error || err.message
-        }`
-      );
+      const msg = err.response?.data?.error || err.message;
+      alert(`Erro ao ${editId ? "atualizar" : "cadastrar"} veículo: ${msg}`);
     }
   };
 
@@ -71,29 +88,20 @@ function Vehicles() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Tem certeza que deseja deletar este veículo?")) return;
+    if (!confirm("Deseja realmente excluir este veículo?")) return;
     try {
-      await axios.delete(`http://localhost:4000/vehicles/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
+      await axios.delete(`${API}/vehicles/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
       setVehicles(prev => prev.filter(v => v.id !== id));
     } catch (err) {
-      alert("Error deleting vehicle: " + (err.response?.data?.error || err.message));
+      alert("Erro ao deletar: " + (err.response?.data?.error || err.message));
     }
-  };
-
-  const resetForm = () => {
-    setEditId(null);
-    setPlateNumber("");
-    setModel("");
-    setOwner("");
-    setDriverId("");
-    setShowForm(false);
   };
 
   return (
     <div className="p-4">
-      <h2 className="text-2xl font-bold mb-4">Vehicles</h2>
+      <h2 className="text-2xl font-bold mb-4">🚗 Veículos</h2>
 
       {user?.role === "admin" && (
         <>
@@ -101,43 +109,47 @@ function Vehicles() {
             onClick={openFormCreate}
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mb-4"
           >
-            {editId ? "Edit Vehicle" : "Register Vehicle"}
+            {editId ? "✏️ Editar Veículo" : "➕ Novo Veículo"}
           </button>
 
           {showForm && (
             <form onSubmit={handleSubmit} className="mb-6 space-y-4 max-w-md">
               <div>
-                <label>Plate Number</label>
+                <label className="block text-sm font-medium">Placa</label>
                 <input
                   value={plateNumber}
                   onChange={e => setPlateNumber(e.target.value)}
-                  required className="w-full border rounded p-2"
+                  required
+                  className="w-full border rounded p-2"
                 />
               </div>
               <div>
-                <label>Model</label>
+                <label className="block text-sm font-medium">Modelo</label>
                 <input
                   value={model}
                   onChange={e => setModel(e.target.value)}
-                  required className="w-full border rounded p-2"
+                  required
+                  className="w-full border rounded p-2"
                 />
               </div>
               <div>
-                <label>Owner</label>
+                <label className="block text-sm font-medium">Proprietário</label>
                 <input
                   value={owner}
                   onChange={e => setOwner(e.target.value)}
-                  required className="w-full border rounded p-2"
+                  required
+                  className="w-full border rounded p-2"
                 />
               </div>
               <div>
-                <label>Driver</label>
+                <label className="block text-sm font-medium">Motorista</label>
                 <select
                   value={driverId}
                   onChange={e => setDriverId(e.target.value)}
-                  required className="w-full border rounded p-2"
+                  required
+                  className="w-full border rounded p-2"
                 >
-                  <option value="">Select a driver</option>
+                  <option value="">Selecione um motorista</option>
                   {drivers.map(d => (
                     <option key={d.id} value={d.id}>
                       {d.name} – {d.license_number}
@@ -145,13 +157,17 @@ function Vehicles() {
                   ))}
                 </select>
               </div>
+
               <div className="flex items-center gap-2">
-                <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-                  {editId ? "Update" : "Submit"}
+                <button
+                  type="submit"
+                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                >
+                  {editId ? "Atualizar" : "Cadastrar"}
                 </button>
                 {editId && (
                   <button type="button" onClick={resetForm} className="text-gray-700 underline">
-                    Cancel
+                    Cancelar
                   </button>
                 )}
               </div>
@@ -163,20 +179,23 @@ function Vehicles() {
       <ul className="space-y-2">
         {vehicles.map(v => (
           <li key={v.id} className="border p-3 rounded flex justify-between items-center">
-            <span><strong>{v.plate_number}</strong> – {v.model}</span>
+            <div>
+              <strong>{v.plate_number}</strong> – {v.model} <br />
+              <span className="text-sm text-gray-600">Proprietário: {v.owner}</span>
+            </div>
             {user?.role === "admin" && (
               <div className="flex gap-2">
                 <button
                   onClick={() => handleEdit(v)}
                   className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
                 >
-                  Edit
+                  Editar
                 </button>
                 <button
                   onClick={() => handleDelete(v.id)}
                   className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
                 >
-                  Delete
+                  Excluir
                 </button>
               </div>
             )}

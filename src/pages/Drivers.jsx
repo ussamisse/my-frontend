@@ -12,9 +12,11 @@ function Drivers() {
     loadDrivers();
   }, [token]);
 
+  const API_BASE = "https://my-backend-e2jy.onrender.com";
+
   const loadDrivers = () => {
     axios
-      .get("http://localhost:4000/drivers", { headers: { Authorization: `Bearer ${token}` } })
+      .get(`${API_BASE}/drivers`, { headers: { Authorization: `Bearer ${token}` } })
       .then(res => setDrivers(res.data))
       .catch(err => console.error("Access denied:", err));
   };
@@ -33,7 +35,7 @@ function Drivers() {
     e.preventDefault();
     try {
       const res = await axios.put(
-        `http://localhost:4000/drivers/${editing.id}`,
+        `${API_BASE}/drivers/${editing.id}`,
         form,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -48,7 +50,7 @@ function Drivers() {
     e.preventDefault();
     try {
       const res = await axios.post(
-        "http://localhost:4000/drivers",
+        `${API_BASE}/drivers`,
         form,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -62,7 +64,7 @@ function Drivers() {
   const handleDelete = async (id) => {
     if (!window.confirm("Confirm delete?")) return;
     try {
-      await axios.delete(`http://localhost:4000/drivers/${id}`, {
+      await axios.delete(`${API_BASE}/drivers/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setDrivers(prev => prev.filter(d => d.id !== id));
